@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>Zoo Tychoon 路徑生成器</title>
+
+<style>
+    #grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(9, 1fr);
+        gap: 5px;
+    }
+    .grid-item {
+        width: 20px;
+        height: 20px;
+        background-color: #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .active {
+        background-color: #f00;
+    }
+    canvas {
+        border: 1px solid #000;
+    }
+</style>
+
+</head>
+
+<body>
+<h1>Zoo Tychoon 路徑生成器</h1>
+<p id="startCoordinate">起始坐標: 無</p>
+<p id="path">行走的方向: 無</p>
+<canvas id="canvas" width="100" height="300"></canvas>
+<div id="grid"></div>
+<script>
+function drawPath(path, startX, startY) {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.moveTo(startX * 20 + 10, startY * 20 + 10);
+    path.forEach((direction, index) => {
+        switch (direction) {
+            case '上': startY--; break;
+            case '下': startY++; break;
+            case '左': startX--; break;
+            case '右': startX++; break;
+        }
+        ctx.lineTo(startX * 20 + 10, startY * 20 + 10);
+        ctx.fillText(index + 2, startX * 20 + 5, startY * 20 + 15);
+    });
+    ctx.stroke();
+}
+
+function getRandomCoordinate(minX, maxX, minY, maxY) {
+    var x = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+    var y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+    return { x: x, y: y };
+}
+
+function walkRandomly(startX, startY, steps, minX, maxX, minY, maxY) {
+    let attempts = 0;
+    let maxAttempts = 100;
+    let currentX = startX;
+    let currentY = startY;
+    let directions = ['上', '下', '左', '右'];
+    let visited = new Set([`${currentX},${currentY}`]);
+    let path = [];
+
+    while (path.length < steps && attempts < maxAttempts) {
+        let possibleMoves = directions.filter(direction => {
+            let newX = currentX;
+            let newY = currentY;
+            switch (direction) {
+                case '上': newY--; break; // 修正方向
+                case '下': newY++; break; // 修正方向
+                case '左': newX--; break;
+                case '右': newX++; break;
+            }
+            return newX >= minX && newX <= maxX && newY >= minY && newY <= maxY && !visited.has(`${newX},${newY}`);
+        });
+
+        if (possibleMoves.length === 0) {
+            visited = new Set([`${startX},${startY}`]);
+            path = [];
+            currentX = startX;
+            currentY = startY;
+            attempts++;
+            continue;
+        }
+
+        let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        path.push(move);
+
+        switch (move) {
+            case '上': currentY--; break; // 修正方向
+            case '下': currentY++; break; // 修正方向
+            case '左': currentX--; break;
+            case '右': currentX++; break;
+        }
+
+        visited.add(`${currentX},${currentY}`);
+    }
+
+    if (attempts === maxAttempts) {
+        console.log('無法找到有效路徑，請嘗試更寬鬆的條件或減少步數。');
+    }
+
+    return path;
+}
+
+function generateRandomPath() {
+    let minX = 1; // x坐標的最小值
+    let maxX = 3; // x坐標的最大值
+    let minY = 1; // y坐標的最小值
+    let maxY = 9; // y坐標的最大值
+    let steps = 6; // 要行走的步數
+
+    let startCoordinate = getRandomCoordinate(minX, maxX, minY, maxY);
+    document.getElementById('startCoordinate').textContent = '起始坐標是: (' + startCoordinate.x + ',' + startCoordinate.y + ')';
+    let path = walkRandomly(startCoordinate.x, startCoordinate.y, steps, minX, maxX, minY, maxY);
+    document.getElementById('path').textContent = '行走的方向: ' + path.join(', ');
+    drawPath(path, startCoordinate.x, startCoordinate.y);
+}
+
+generateRandomPath();
+</script>
+</body>
+</html>
